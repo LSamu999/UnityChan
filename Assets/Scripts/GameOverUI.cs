@@ -5,60 +5,50 @@ using TMPro;
 
 /// <summary>
 /// Manages the Game Over canvas.
-/// Attach to the GameOverPanel root GameObject.
-/// Wire up the public references in the Inspector, then hook:
-///   PlayerHealth.onLivesChanged -> GameOverUI.UpdateHearts
-///   PlayerHealth.onGameOver     -> GameOverUI.ShowGameOver
+/// Auto-subscribes to PlayerHealth.onGameOver on Start.
+/// Also updates HUD hearts via PlayerHealth.onLivesChanged.
 /// </summary>
 public class GameOverUI : MonoBehaviour
 {
     [Header("Panels")]
-    public GameObject gameOverPanel;   // the full-screen dark panel
+    public GameObject gameOverPanel;
 
-    [Header("HUD Hearts (in-game)")]
-    public Image[] hudHearts;          // 3 heart images shown during play
-
-    [Header("Game Over Hearts")]
-    public Image[] gameOverHearts;     // 3 broken hearts inside the Game Over panel
+    [Header("Game Over broken hearts (inside panel)")]
+    public Image[] gameOverHearts;
 
     [Header("Colors")]
-    public Color heartFullColor    = new Color(0.82f, 0.07f, 0.07f);   // blood red
-    public Color heartEmptyColor   = new Color(0.23f, 0.21f, 0.19f);   // dark stone
+    public Color heartEmptyColor = new Color(0.227f, 0.212f, 0.196f, 1f);
 
     void Start()
     {
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
+
+        // Auto-subscribe to PlayerHealth
+        var ph = FindObjectOfType<PlayerHealth>();
+        if (ph != null)
+        {
+            ph.onLivesChanged.AddListener(UpdateHearts);
+            ph.onGameOver.AddListener(ShowGameOver);
+        }
     }
 
-    // ─── Called by PlayerHealth.onLivesChanged ──────────────────────────────
     public void UpdateHearts(int livesRemaining)
     {
-        // HUD hearts
-        for (int i = 0; i < hudHearts.Length; i++)
-        {
-            if (hudHearts[i] == null) continue;
-            hudHearts[i].color = (i < livesRemaining) ? heartFullColor : heartEmptyColor;
-        }
-
-        // Game Over panel hearts  (all shown as empty/broken in game over)
         for (int i = 0; i < gameOverHearts.Length; i++)
         {
-            if (gameOverHearts[i] == null) continue;
-            gameOverHearts[i].color = heartEmptyColor;
+            if (gameOverHearts[i] != null)
+                gameOverHearts[i].color = heartEmptyColor;
         }
     }
 
-    // ─── Called by PlayerHealth.onGameOver ──────────────────────────────────
     public void ShowGameOver()
     {
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
-
-        Time.timeScale = 0f;  // freeze the game
+        Time.timeScale = 0f;
     }
 
-    // ─── Button callbacks ────────────────────────────────────────────────────
     public void OnRetry()
     {
         Time.timeScale = 1f;
