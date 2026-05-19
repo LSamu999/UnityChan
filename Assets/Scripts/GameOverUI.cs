@@ -5,8 +5,7 @@ using TMPro;
 
 /// <summary>
 /// Manages the Game Over canvas.
-/// Auto-subscribes to PlayerHealth.onGameOver on Start.
-/// Also updates HUD hearts via PlayerHealth.onLivesChanged.
+/// Auto-subscribes to PlayerHealth and wires buttons in Start().
 /// </summary>
 public class GameOverUI : MonoBehaviour
 {
@@ -21,15 +20,36 @@ public class GameOverUI : MonoBehaviour
 
     void Start()
     {
+        // Hide panel at game start
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
 
-        // Auto-subscribe to PlayerHealth
+        // Auto-subscribe to PlayerHealth events
         var ph = FindObjectOfType<PlayerHealth>();
         if (ph != null)
         {
             ph.onLivesChanged.AddListener(UpdateHearts);
             ph.onGameOver.AddListener(ShowGameOver);
+        }
+
+        // Wire buttons by finding them in the hierarchy
+        WireButtons();
+    }
+
+    private void WireButtons()
+    {
+        if (gameOverPanel == null) return;
+
+        // Search recursively for buttons named REINTENTAR_Btn and SALIR_Btn
+        var allButtons = gameOverPanel.GetComponentsInChildren<Button>(true);
+        foreach (var btn in allButtons)
+        {
+            btn.onClick.RemoveAllListeners();
+
+            if (btn.gameObject.name == "REINTENTAR_Btn")
+                btn.onClick.AddListener(OnRetry);
+            else if (btn.gameObject.name == "SALIR_Btn")
+                btn.onClick.AddListener(OnQuit);
         }
     }
 
@@ -46,6 +66,7 @@ public class GameOverUI : MonoBehaviour
     {
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
+
         Time.timeScale = 0f;
     }
 
